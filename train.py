@@ -31,6 +31,7 @@ parser.add_argument('--patience', type=int, default=100, help='Patience')
 
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
+print("using cuda successfully:{}".format(args.cuda))
 
 random.seed(args.seed)
 np.random.seed(args.seed)
