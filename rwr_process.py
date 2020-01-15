@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import pickle
-np.set_printoptions(threshold=np.nan)
+np.set_printoptions(threshold=np.inf)
 
 class RWRLayer(nn.Module):
     """
