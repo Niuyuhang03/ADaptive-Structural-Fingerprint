@@ -15,6 +15,7 @@ import scipy.sparse as sp
 from utils_nhop_neighbours import load_data, accuracy
 from models import ADSF, RWR_process
 
+
 # Training settings
 parser = argparse.ArgumentParser()
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables CUDA training.')
@@ -28,6 +29,7 @@ parser.add_argument('--nb_heads', type=int, default=8, help='Number of head atte
 parser.add_argument('--dropout', type=float, default=0.6, help='Dropout rate (1 - keep probability).')
 parser.add_argument('--alpha', type=float, default=0.2, help='Alpha for the leaky_relu.')
 parser.add_argument('--patience', type=int, default=100, help='Patience')
+parser.add_argument('--dataset', type=str, default='citeseer', help='DataSet of model')
 
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -66,28 +68,30 @@ def sparse_to_tuple(sparse_mx):
         sparse_mx = to_tuple(sparse_mx)
 
     return sparse_mx
-# Load data
-adj, features,  idx_train, idx_val, idx_test, train_mask, val_mask, test_mask,labels ,adj_ad= load_data("citeseer")
-features, spars = preprocess_features(features)
-features=np.array(features)
-features=scipy.sparse.csr_matrix(features)
 
-features=features.astype(np.float32)
+
+# Load data
+adj, features, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask, labels, adj_ad = load_data(args.dataset)
+features, spars = preprocess_features(features)
+features = np.array(features)
+features = scipy.sparse.csr_matrix(features)
+
+features = features.astype(np.float32)
 features = torch.FloatTensor(features.todense())
 
 if args.sparse:
     model =  RWR_process(nfeat=features.shape[1],
-                nhid=args.hidden, 
-                nclass=int(labels.max()) + 1, 
-                dropout=args.dropout, 
-                nheads=args.nb_heads, 
+                nhid=args.hidden,
+                nclass=int(labels.max()) + 1,
+                dropout=args.dropout,
+                nheads=args.nb_heads,
                 alpha=args.alpha)
 else:
     model = ADSF(nfeat=features.shape[1],
-                nhid=args.hidden, 
-                nclass=int(labels.max()) + 1, 
-                dropout=args.dropout, 
-                nheads=args.nb_heads, 
+                nhid=args.hidden,
+                nclass=int(labels.max()) + 1,
+                dropout=args.dropout,
+                nheads=args.nb_heads,
                 alpha=args.alpha,adj_ad=adj_ad)
 optimizer = optim.Adam(model.parameters(), 
                        lr=args.lr, 
@@ -109,7 +113,7 @@ def train(epoch):
     t = time.time()
     model.train()
     optimizer.zero_grad()
-    output = model(features, adj,adj_ad)
+    output = model(features, adj, adj_ad)
     loss_train = F.nll_loss(output[idx_train], labels[idx_train])
     acc_train = accuracy(output[idx_train], labels[idx_train])
     loss_train.backward()
@@ -119,7 +123,7 @@ def train(epoch):
         # Evaluate validation set performance separately,
         # deactivates dropout during validation run.
         model.eval()
-        output = model(features, adj,adj_ad)
+        output = model(features, adj, adj_ad)
     
     loss_val = F.nll_loss(output[idx_val], labels[idx_val])
     acc_val = accuracy(output[idx_val], labels[idx_val])
@@ -141,6 +145,7 @@ def train(epoch):
     
     return loss_val.data.item()
 
+
 # Train model
 t_total = time.time()
 loss_values = []
@@ -159,12 +164,12 @@ for epoch in range(args.epochs):
 
     if bad_counter == args.patience:
         break
-    files = glob.glob('185.pkl')
+    files = glob.glob('*.pkl')
     for file in files:
         epoch_nb = int(file.split('.')[0])
         if epoch_nb < best_epoch:
             os.remove(file)
-files = glob.glob('185.pkl')
+files = glob.glob('*.pkl')
 for file in files:
     epoch_nb = int(file.split('.')[0])
     if epoch_nb > best_epoch:
@@ -176,5 +181,3 @@ print("Total time elapsed: {:.4f}s".format(time.time() - t_total))
 # Restore best model
 print('Loading {}th epoch'.format(best_epoch))
 model.load_state_dict(torch.load('{}.pkl'.format(best_epoch)))
-
-
