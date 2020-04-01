@@ -198,7 +198,7 @@ def load_data(dataset_str):
     idx_train = torch.LongTensor(idx_train)
     idx_val = torch.LongTensor(idx_val)
     idx_test = torch.LongTensor(idx_test)
-    return adj, features,idx_train, idx_val, idx_test, train_mask, val_mask, test_mask,labels,adj_delta
+    return adj, features, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask,labels,adj_delta
 
 
 def normalize_adj(mx):

@@ -41,22 +41,23 @@ torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
+
 def preprocess_features(features):
-    """Row-normalize feature matrix and convert to tuple representation"""
-    rowsum = np.array(features.sum(1))
-    r_inv = np.power(rowsum, -1).flatten()
-    r_inv[np.isinf(r_inv)] = 0.
-    r_mat_inv = sp.diags(r_inv)
+    """Row-normalize feature matrix and convert to tuple representation"""  # 将features按行归一化，features为coo稀疏矩阵格式
+    rowsum = np.array(features.sum(1))  # 每行求和
+    r_inv = (1 / rowsum).flatten()  # 求倒数，展开，原代码为r_inv = np.power(rowsum, -1).flatten()，无法运行-1次方
+    r_inv[np.isinf(r_inv)] = 0.  # 处理nan
+    r_mat_inv = sp.diags(r_inv)  # 构建稀疏的对角矩阵
     features = r_mat_inv.dot(features)
     return features.todense(), sparse_to_tuple(features)
 
 
 def sparse_to_tuple(sparse_mx):
-    """Convert sparse matrix to tuple representation."""
+    """Convert sparse matrix to tuple representation."""  # 稀疏矩阵变元组
     def to_tuple(mx):
         if not sp.isspmatrix_coo(mx):
             mx = mx.tocoo()
-        coords = np.vstack((mx.row, mx.col)).transpose()
+        coords = np.vstack((mx.row, mx.col)).transpose()  # coords是稀疏矩阵中位置信息
         values = mx.data
         shape = mx.shape
         return coords, values, shape
@@ -65,7 +66,7 @@ def sparse_to_tuple(sparse_mx):
         for i in range(len(sparse_mx)):
             sparse_mx[i] = to_tuple(sparse_mx[i])
     else:
-        sparse_mx = to_tuple(sparse_mx)
+        sparse_mx = to_tuple(sparse_mx)  # 得到(位置，值，shape)的元组
 
     return sparse_mx
 
@@ -80,7 +81,7 @@ features = features.astype(np.float32)
 features = torch.FloatTensor(features.todense())
 
 if args.sparse:
-    model =  RWR_process(nfeat=features.shape[1],
+    model = RWR_process(nfeat=features.shape[1],
                 nhid=args.hidden,
                 nclass=int(labels.max()) + 1,
                 dropout=args.dropout,
