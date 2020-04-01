@@ -62,7 +62,7 @@ def sparse_to_tuple(sparse_mx):
         shape = mx.shape
         return coords, values, shape
 
-    if isinstance(sparse_mx, list):
+    if isinstance(sparse_mx, list):  # 不会进来
         for i in range(len(sparse_mx)):
             sparse_mx[i] = to_tuple(sparse_mx[i])
     else:
@@ -72,8 +72,8 @@ def sparse_to_tuple(sparse_mx):
 
 
 # Load data
-adj, features, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask, labels, adj_ad = load_data(args.dataset)
-features, spars = preprocess_features(features)
+adj, features, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask, labels, adj_ad = load_data(args.dataset)  # feature为coo稀疏矩阵
+features, spars = preprocess_features(features)  # feature得到元组
 features = np.array(features)
 features = scipy.sparse.csr_matrix(features)
 
