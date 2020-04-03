@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import pickle
 np.set_printoptions(threshold=np.inf)
 
+
 class RWRLayer(nn.Module):
     """
     Random Walker Rstart layer
@@ -24,13 +25,12 @@ class RWRLayer(nn.Module):
         nn.init.xavier_uniform_(self.a.data, gain=1.414)
         self.leakyrelu = nn.LeakyReLU(self.alpha)
 
-
     def forward(self, input, adj):
         h = torch.mm(input, self.W)
         N = h.size()[0]
-        a_input = torch.cat([h.repeat(1, N).view(N* N, -1), h.repeat(N, 1)], dim=1).view(N, -1, 2 * self.out_features)
+        a_input = torch.cat([h.repeat(1, N).view(N * N, -1), h.repeat(N, 1)], dim=1).view(N, -1, 2 * self.out_features)
         e = self.leakyrelu(torch.matmul(a_input, self.a).squeeze(2))
-        s=self.adj_ad
+        s = self.adj_ad
         fw = open('dijskra_citeseer.pkl', 'rb')
         dijkstra = pickle.load(fw)
         Dijkstra = dijkstra.numpy()
@@ -90,11 +90,11 @@ class RWRLayer(nn.Module):
         fw.close()
 
         e = e.cuda()
-        zero_vec = -9e15*torch.ones_like(e)
-        k_vec=-9e15*torch.ones_like(e)
-        adj=adj.cuda()
+        zero_vec = -9e15 * torch.ones_like(e)
+        k_vec = -9e15*torch.ones_like(e)
+        adj = adj.cuda()
         np.set_printoptions(threshold=np.nan)
-        attention = torch.where(adj>0 , e, zero_vec)
+        attention = torch.where(adj > 0, e, zero_vec)
         attention = F.softmax(attention, dim=1)
         attention = F.dropout(attention, self.dropout, training=self.training)
         h_prime = torch.matmul(attention, h)
@@ -105,7 +105,3 @@ class RWRLayer(nn.Module):
 
     def __repr__(self):
         return self.__class__.__name__ + ' (' + str(self.in_features) + ' -> ' + str(self.out_features) + ')'
-
-
-
-

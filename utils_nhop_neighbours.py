@@ -1,4 +1,3 @@
-
 import numpy as np
 import pickle as pkl
 import networkx as nx
@@ -8,11 +7,13 @@ import sys
 import torch
 import pickle
 
+
 def sample_mask(idx, l):
     """Create mask."""
     mask = np.zeros(l)
     mask[idx] = 1
     return np.array(mask, dtype=np.bool)
+
 
 def preprocess_features(features):
     """Row-normalize feature matrix and convert to tuple representation"""
@@ -22,6 +23,7 @@ def preprocess_features(features):
     r_mat_inv = sp.diags(r_inv)
     features = r_mat_inv.dot(features)
     return features.todense(), sparse_to_tuple(features)
+
 
 def sparse_to_tuple(sparse_mx):
     """Convert sparse matrix to tuple representation."""
@@ -55,7 +57,6 @@ def encode_onehot(labels):
     classes_dict = {c: np.identity(len(classes))[i, :] for i, c in enumerate(classes)}
     labels_onehot = np.array(list(map(classes_dict.get, labels)), dtype=np.int32)
     return labels_onehot
-
 
 
 def structural_interaction(ri_index, ri_all, g):
@@ -95,13 +96,11 @@ def structural_interaction(ri_index, ri_all, g):
                 union_num = np.sum(np.array(union_ri_allj), axis=0)
                 inter_num = np.sum(np.array(k_min), axis=0)
                 g[i][j] = inter_num / union_num
-
     return g
 
 
-
 def load_data(dataset_str):
-      # """Load data."""
+    """Load data."""
     names = ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'graph']
     objects = []
     for i in range(len(names)):
@@ -117,9 +116,11 @@ def load_data(dataset_str):
 
     if dataset_str == 'citeseer':
         test_idx_range_full = range(min(test_idx_reorder), max(test_idx_reorder)+1)
-        tx_extended = sp.lil_matrix((len(test_idx_range_full), x.shape[1]))
+
+        tx_extended = sp.lil_matrix((len(test_idx_range_full), x.shape[1]))  # 构建稀疏矩阵
         tx_extended[test_idx_range-min(test_idx_range), :] = tx
         tx = tx_extended
+
         ty_extended = np.zeros((len(test_idx_range_full), y.shape[1]))
         ty_extended[test_idx_range-min(test_idx_range), :] = ty
         ty = ty_extended
@@ -158,53 +159,46 @@ def load_data(dataset_str):
     adj_delta = adj
     # caculate n-hop neighbors
     G = nx.DiGraph()
-    inf= pickle.load(open('adj_citeseer.pkl', 'rb'))
+    inf = pickle.load(open('adj_citeseer.pkl', 'rb'))  # 没有文件
     for i in range(len(inf)):
         for j in range(len(inf[i])):
-          G.add_edge(i, inf[i][j], weight=1)
-    for i in range(3327):
-          for j in range(3327):
-              try:
-                  rs = nx.astar_path_length \
-                          (
-                          G,
-                          i,
-                          j,
-                      )
-              except nx.NetworkXNoPath:
-                 rs = 0
-              if rs == 0:
-                  length = 0
-              else:
-                  # print(rs)
-                  length = len(rs)
-              adj_delta[i][j] = length
-    a = open("dijskra_citeseer.pkl", 'wb')
+            G.add_edge(i, inf[i][j], weight=1)
+    for i in range(3327):  # 原代码缩进有问题
+        for j in range(3327):
+            try:
+                rs = nx.astar_path_length(G, i, j)
+            except nx.NetworkXNoPath:
+                rs = 0
+            if rs == 0:
+                length = 0
+            else:
+                # print(rs)
+                length = len(rs)
+            adj_delta[i][j] = length
+    a = open("dijskra_citeseer.pkl", 'wb')  # 没有文件
     pickle.dump(adj_delta, a)
 
-
-
-    fw = open('ri_index_c_0.5_citeseer_highorder_1_x_abs.pkl', 'rb')
+    fw = open('ri_index_c_0.5_citeseer_highorder_1_x_abs.pkl', 'rb')  # 没有文件
     ri_index = pickle.load(fw)
     fw.close()
 
-    fw = open('ri_all_c_0.5_citeseer_highorder_1_x_abs.pkl', 'rb')
+    fw = open('ri_all_c_0.5_citeseer_highorder_1_x_abs.pkl', 'rb')  # 没有文件
     ri_all = pickle.load(fw)
     fw.close()
     # Evaluate structural interaction between the structural fingerprints of node i and j
-    adj_delta = structural_interaction(ri_index, ri_all, adj_delta)
+    adj_delta = structural_interaction(ri_index, ri_all, adj_delta)  # 构建结构信息
 
     labels = torch.LongTensor(np.where(labels)[1])
     idx_train = torch.LongTensor(idx_train)
     idx_val = torch.LongTensor(idx_val)
     idx_test = torch.LongTensor(idx_test)
-    return adj, features, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask,labels,adj_delta
+    return adj, features, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask, labels, adj_delta
 
 
 def normalize_adj(mx):
     """Row-normalize sparse matrix"""
     rowsum = np.array(mx.sum(1))
-    r_inv_sqrt = np.power(rowsum, -0.5).flatten()
+    r_inv_sqrt = (1 / np.power(rowsum, 0.5)).flatten()  # 原代码为r_inv_sqrt = np.power(rowsum, -0.5).flatten()
     r_inv_sqrt[np.isinf(r_inv_sqrt)] = 0.
     r_mat_inv_sqrt = sp.diags(r_inv_sqrt)
     return mx.dot(r_mat_inv_sqrt).transpose().dot(r_mat_inv_sqrt)
@@ -213,7 +207,7 @@ def normalize_adj(mx):
 def normalize_features(mx):
     """Row-normalize sparse matrix"""
     rowsum = np.array(mx.sum(1))
-    r_inv = np.power(rowsum, -1).flatten()
+    r_inv = (1 / rowsum).flatten()  # 原代码为r_inv = np.power(rowsum, -1).flatten()
     r_inv[np.isinf(r_inv)] = 0.
     r_mat_inv = sp.diags(r_inv)
     mx = r_mat_inv.dot(mx)
