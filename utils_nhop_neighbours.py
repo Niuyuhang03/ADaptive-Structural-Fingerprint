@@ -63,8 +63,8 @@ def structural_interaction(ri_index, ri_all, g):
     """structural interaction between the structural fingerprints for citeseer"""
     for i in range(3327):
         for j in range(3327):
-            intersection = set(ri_index[i]).intersection(set(ri_index[j]))
-            union = set(ri_index[i]).union(set(ri_index[j]))
+            intersection = set(ri_index[i]).intersection(set(ri_index[j]))  # 返回两个集合交集
+            union = set(ri_index[i]).union(set(ri_index[j]))  # 并集
             intersection = list(intersection)
             union = list(union)
             intersection_ri_alli = []
@@ -146,7 +146,7 @@ def load_data(dataset_str):
     y_train[train_mask, :] = labels[train_mask, :]
     y_val[val_mask, :] = labels[val_mask, :]
     y_test[test_mask, :] = labels[test_mask, :]
-    adj=adj.astype(np.float32)
+    adj = adj.astype(np.float32)
     adj_ad1 = adj
     adj_sum_ad = np.sum(adj_ad1, axis=0)
     adj_sum_ad = np.asarray(adj_sum_ad)
@@ -158,24 +158,24 @@ def load_data(dataset_str):
     adj = torch.FloatTensor(np.array(adj.todense()))
     adj_delta = adj
     # caculate n-hop neighbors
-    G = nx.DiGraph()
-    inf = pickle.load(open('adj_citeseer.pkl', 'rb'))  # 没有文件
+    G = nx.DiGraph()  # 创建有向图
+    inf = pickle.load(open('adj_citeseer.pkl', 'rb'))  # 没有文件，应当是图的连通性文件，
     for i in range(len(inf)):
         for j in range(len(inf[i])):
             G.add_edge(i, inf[i][j], weight=1)
     for i in range(3327):  # 原代码缩进有问题
         for j in range(3327):
             try:
-                rs = nx.astar_path_length(G, i, j)
+                rs = nx.astar_path_length(G, i, j)  # A星算法求两点距离
             except nx.NetworkXNoPath:
                 rs = 0
             if rs == 0:
                 length = 0
             else:
                 # print(rs)
-                length = len(rs)
-            adj_delta[i][j] = length
-    a = open("dijskra_citeseer.pkl", 'wb')  # 没有文件
+                length = rs  # 原代码为length = len(rs)
+            adj_delta[i][j] = length  # adj_delta为任意两点间最短距离，不连通则为0
+    a = open("dijskra_citeseer.pkl", 'wb')  # 写入
     pickle.dump(adj_delta, a)
 
     fw = open('ri_index_c_0.5_citeseer_highorder_1_x_abs.pkl', 'rb')  # 没有文件

@@ -73,7 +73,7 @@ def sparse_to_tuple(sparse_mx):  # 稀疏矩阵features变元组
 
 
 # Load data
-adj, features, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask, labels, adj_ad = load_data(args.dataset)  # feature为coo稀疏矩阵
+adj, features, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask, labels, adj_ad = load_data(args.dataset)  # features为coo稀疏矩阵
 features, spars = preprocess_features(features)  # 归一化，得到实矩阵features和元组spars
 features = np.array(features)
 features = scipy.sparse.csr_matrix(features)  # 稀疏矩阵features
