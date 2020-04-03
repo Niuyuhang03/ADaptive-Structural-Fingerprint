@@ -11,14 +11,14 @@ class RWRLayer(nn.Module):
     Random Walker Rstart layer
     """
 
-    def __init__(self, in_features, out_features, dropout, alpha,adj_ad, concat=True,):
+    def __init__(self, in_features, out_features, dropout, alpha, adj_ad, concat=True):
         super(RWRLayer, self).__init__()
         self.dropout = dropout
         self.in_features = in_features
         self.out_features = out_features
         self.alpha = alpha
         self.concat = concat
-        self.adj_ad=adj_ad
+        self.adj_ad = adj_ad
         self.W = nn.Parameter(torch.zeros(size=(in_features, out_features)))
         nn.init.xavier_uniform_(self.W.data, gain=1.414)
         self.a = nn.Parameter(torch.zeros(size=(2*out_features, 1)))
