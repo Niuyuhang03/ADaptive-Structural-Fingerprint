@@ -12,10 +12,10 @@ class ADSF(nn.Module):
         self.dropout = dropout
         self.attentions = [StructuralFingerprintLayer(nfeat, nhid, dropout=dropout, alpha=alpha, adj_ad=adj_ad, concat=True) for _ in range(nheads)]
         for i, attention in enumerate(self.attentions):
-            self.add_module('attention_{}'.format(i), attention)
+            self.add_module('attention_{}'.format(i), attention)  # 按attention_i名使用layer，似乎未用到
         self.out_att = StructuralFingerprintLayer(nhid * nheads, nclass, dropout=dropout, alpha=alpha, adj_ad=adj_ad, concat=False)
 
-    def forward(self, x, adj,adj_ad):
+    def forward(self, x, adj, adj_ad):
         x = F.dropout(x, self.dropout, training=self.training)
         x = torch.cat([att(x, adj) for att in self.attentions], dim=1)
         x = F.dropout(x, self.dropout, training=self.training)

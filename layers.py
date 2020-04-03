@@ -11,7 +11,7 @@ class StructuralFingerprintLayer(nn.Module):
     adaptive structural fingerprint layer
     """
 
-    def __init__(self, in_features, out_features, dropout, alpha, adj_ad, concat=True,):
+    def __init__(self, in_features, out_features, dropout, alpha, adj_ad, concat=True):
         super(StructuralFingerprintLayer, self).__init__()
         self.dropout = dropout
         self.in_features = in_features
