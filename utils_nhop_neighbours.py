@@ -159,7 +159,7 @@ def load_data(dataset_str, sparse):
     adj_delta = adj
     # caculate n-hop neighbors
     G = nx.DiGraph()  # 创建有向图
-    inf = pickle.load(open('adj_citeseer.pkl', 'rb'))  # 没有文件，应当是图的连通性文件，
+    inf = pickle.load(open('data/citeseer/adj_citeseer.pkl', 'rb'))  # 没有文件，应当是图的连通性文件，
     for i in range(len(inf)):
         for j in range(len(inf[i])):
             G.add_edge(i, inf[i][j], weight=1)
@@ -175,15 +175,15 @@ def load_data(dataset_str, sparse):
                 # print(rs)
                 length = rs  # 原代码为length = len(rs)
             adj_delta[i][j] = length  # adj_delta为任意两点间最短距离，不连通则为0
-    a = open("dijskra_citeseer.pkl", 'wb')  # 写入
+    a = open("data/citeseer/dijskra_citeseer.pkl", 'wb')  # 写入
     pickle.dump(adj_delta, a)
 
     if not sparse:
-        fw = open('ri_index_c_0.5_citeseer_highorder_1_x_abs.pkl', 'rb')  # 没有文件
+        fw = open('data/citeseer/ri_index_c_0.5_citeseer_highorder_1_x_abs.pkl', 'rb')  # 没有文件
         ri_index = pickle.load(fw)
         fw.close()
 
-        fw = open('ri_all_c_0.5_citeseer_highorder_1_x_abs.pkl', 'rb')  # 没有文件
+        fw = open('data/citeseer/ri_all_c_0.5_citeseer_highorder_1_x_abs.pkl', 'rb')  # 没有文件
         ri_all = pickle.load(fw)
         fw.close()
         # Evaluate structural interaction between the structural fingerprints of node i and j

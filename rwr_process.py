@@ -31,7 +31,7 @@ class RWRLayer(nn.Module):
         a_input = torch.cat([h.repeat(1, N).view(N * N, -1), h.repeat(N, 1)], dim=1).view(N, -1, 2 * self.out_features)
         e = self.leakyrelu(torch.matmul(a_input, self.a).squeeze(2))
         s = self.adj_ad
-        fw = open('dijskra_citeseer.pkl', 'rb')
+        fw = open('data/citeseer/dijskra_citeseer.pkl', 'rb')
         dijkstra = pickle.load(fw)
         Dijkstra = dijkstra.numpy()
         ri_all = []
@@ -81,11 +81,11 @@ class RWRLayer(nn.Module):
             ri_index.append(index_i[0])
             ri_all.append(ri)
 
-        fw = open('ri_index_c_0.5_citeseer_highorder_1_x_abs.pkl', 'wb')
+        fw = open('data/citeseer/ri_index_c_0.5_citeseer_highorder_1_x_abs.pkl', 'wb')
         pickle.dump(ri_index, fw)
         fw.close()
 
-        fw = open('ri_all_c_0.5_citeseer_highorder_1_x_abs.pkl', 'wb')
+        fw = open('data/citeseer/ri_all_c_0.5_citeseer_highorder_1_x_abs.pkl', 'wb')
         pickle.dump(ri_all, fw)
         fw.close()
 
