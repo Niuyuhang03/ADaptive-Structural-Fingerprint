@@ -99,7 +99,7 @@ def structural_interaction(ri_index, ri_all, g):
     return g
 
 
-def load_data(dataset_str):
+def load_data(dataset_str, sparse):
     """Load data."""
     names = ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'graph']
     objects = []
@@ -178,15 +178,16 @@ def load_data(dataset_str):
     a = open("dijskra_citeseer.pkl", 'wb')  # 写入
     pickle.dump(adj_delta, a)
 
-    fw = open('ri_index_c_0.5_citeseer_highorder_1_x_abs.pkl', 'rb')  # 没有文件
-    ri_index = pickle.load(fw)
-    fw.close()
+    if not sparse:
+        fw = open('ri_index_c_0.5_citeseer_highorder_1_x_abs.pkl', 'rb')  # 没有文件
+        ri_index = pickle.load(fw)
+        fw.close()
 
-    fw = open('ri_all_c_0.5_citeseer_highorder_1_x_abs.pkl', 'rb')  # 没有文件
-    ri_all = pickle.load(fw)
-    fw.close()
-    # Evaluate structural interaction between the structural fingerprints of node i and j
-    adj_delta = structural_interaction(ri_index, ri_all, adj_delta)  # 构建结构信息
+        fw = open('ri_all_c_0.5_citeseer_highorder_1_x_abs.pkl', 'rb')  # 没有文件
+        ri_all = pickle.load(fw)
+        fw.close()
+        # Evaluate structural interaction between the structural fingerprints of node i and j
+        adj_delta = structural_interaction(ri_index, ri_all, adj_delta)  # 构建结构信息
 
     labels = torch.LongTensor(np.where(labels)[1])
     idx_train = torch.LongTensor(idx_train)
