@@ -101,6 +101,14 @@ def structural_interaction(ri_index, ri_all, g):
 
 def load_data(dataset_str, sparse):
     """Load data."""
+    # x: scipy.sparse.csr.csr_matrix训练集特征
+    # y: numpy.array独热训练集标签
+    # tx: 测特，tx和allx拼起来作为feature
+    # ty: 测标
+    # allx: 有label+无label的特征，是x的超集
+    # ally: allx的特征，没有标签的数据的y值:[0,0,0,0,0,0,0]
+    # graph: 图，格式如{index: [index of neighbour nodes]}
+    # test: 测试集id
     names = ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'graph']
     objects = []
     for i in range(len(names)):
@@ -115,14 +123,15 @@ def load_data(dataset_str, sparse):
     test_idx_range = np.sort(test_idx_reorder)
 
     if dataset_str == 'citeseer':
+        # citeseer测试数据集中有一些孤立的点，在test.index中没有对应的索引，当作特征全为0的节点
         test_idx_range_full = range(min(test_idx_reorder), max(test_idx_reorder)+1)
 
-        tx_extended = sp.lil_matrix((len(test_idx_range_full), x.shape[1]))  # 构建稀疏矩阵
-        tx_extended[test_idx_range-min(test_idx_range), :] = tx
+        tx_extended = sp.lil_matrix((len(test_idx_range_full), x.shape[1]))
+        tx_extended[test_idx_range - min(test_idx_range), :] = tx
         tx = tx_extended
 
         ty_extended = np.zeros((len(test_idx_range_full), y.shape[1]))
-        ty_extended[test_idx_range-min(test_idx_range), :] = ty
+        ty_extended[test_idx_range - min(test_idx_range), :] = ty
         ty = ty_extended
 
     features = sp.vstack((allx, tx)).tolil()
@@ -179,11 +188,11 @@ def load_data(dataset_str, sparse):
     pickle.dump(adj_delta, a)
 
     if not sparse:
-        fw = open('data/citeseer/ri_index_c_0.5_citeseer_highorder_1_x_abs.pkl', 'rb')  # 没有文件
+        fw = open('data/citeseer/ri_index_c_0.5_citeseer_highorder_1_x_abs.pkl', 'rb')  # adsf生成
         ri_index = pickle.load(fw)
         fw.close()
 
-        fw = open('data/citeseer/ri_all_c_0.5_citeseer_highorder_1_x_abs.pkl', 'rb')  # 没有文件
+        fw = open('data/citeseer/ri_all_c_0.5_citeseer_highorder_1_x_abs.pkl', 'rb')  # adsf生成
         ri_all = pickle.load(fw)
         fw.close()
         # Evaluate structural interaction between the structural fingerprints of node i and j
