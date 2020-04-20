@@ -30,11 +30,12 @@ parser.add_argument('--dropout', type=float, default=0.6, help='Dropout rate (1 
 parser.add_argument('--alpha', type=float, default=0.2, help='Alpha for the leaky_relu.')
 parser.add_argument('--patience', type=int, default=100, help='Patience')
 parser.add_argument('--dataset', type=str, default='citeseer', help='DataSet of model')
-parser.add_argument('--sparse', action='store_true', default=False, help='Use sparse matrix')  # 缺少args.sparse
+parser.add_argument('--no-sparse', action='store_true', default=False, help='Not use sparse matrix')  # 缺少args.no_sparse
 
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 print("using cuda successfully:{}".format(args.cuda))
+sparse = not args.no_sparse  # sparse: default True
 
 random.seed(args.seed)
 np.random.seed(args.seed)
@@ -73,7 +74,7 @@ def sparse_to_tuple(sparse_mx):  # 稀疏矩阵features变元组
 
 
 # Load data
-adj, features, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask, labels, adj_ad = load_data(args.dataset, args.sparse)  # features为coo稀疏矩阵
+adj, features, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask, labels, adj_ad = load_data(args.dataset, sparse)  # features为coo稀疏矩阵
 features, spars = preprocess_features(features)  # 归一化，得到实矩阵features和元组spars
 features = np.array(features)
 features = scipy.sparse.csr_matrix(features)  # 稀疏矩阵features
@@ -81,7 +82,7 @@ features = scipy.sparse.csr_matrix(features)  # 稀疏矩阵features
 features = features.astype(np.float32)
 features = torch.FloatTensor(features.todense())
 
-if args.sparse:
+if sparse:
     model = RWR_process(nfeat=features.shape[1],
                         nhid=args.hidden,
                         nclass=int(labels.max()) + 1,

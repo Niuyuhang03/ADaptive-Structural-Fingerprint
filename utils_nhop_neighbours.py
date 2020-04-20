@@ -168,10 +168,10 @@ def load_data(dataset_str, sparse):
     adj_delta = adj
     # caculate n-hop neighbors
     G = nx.DiGraph()  # 创建有向图
-    inf = pickle.load(open('data/citeseer/adj_citeseer.pkl', 'rb'))  # 没有文件，应当是图的连通性文件，
-    for i in range(len(inf)):
-        for j in range(len(inf[i])):
-            G.add_edge(i, inf[i][j], weight=1)
+    # 原代码inf = pickle.load(open('data/citeseer/adj_citeseer.pkl', 'rb')),for i in range(len(inf)):，for j in range(len(inf[i])):,G.add_edge(i, inf[i][j], weight=1)没有文件，应当是图的连通性文件，
+    for i in graph.keys():
+        for j in graph[i]:
+            G.add_edge(i, j, weight=1)
     for i in range(3327):  # 原代码缩进有问题
         for j in range(3327):
             try:
