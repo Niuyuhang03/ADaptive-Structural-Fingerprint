@@ -36,8 +36,8 @@ class RWRLayer(nn.Module):
         Dijkstra = dijkstra.numpy()
         ri_all = []
         ri_index = []
-        # You may replace 3327 with the size of dataset
-        for i in range(3327):
+        # You may replace adj.shape[0] with the size of dataset
+        for i in range(adj.shape[0]):
             # You may replace 1,4 with the .n-hop neighbors you want
             index_i = np.where((Dijkstra[i] < 4) & (Dijkstra[i] > 1))
             I = np.eye((len(index_i[0]) + 1), dtype=int)

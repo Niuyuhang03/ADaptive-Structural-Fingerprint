@@ -61,8 +61,8 @@ def encode_onehot(labels):
 
 def structural_interaction(ri_index, ri_all, g):
     """structural interaction between the structural fingerprints for citeseer"""
-    for i in range(3327):
-        for j in range(3327):
+    for i in range(g.shape[0]):
+        for j in range(g.shape[0]):
             intersection = set(ri_index[i]).intersection(set(ri_index[j]))  # 返回两个集合交集
             union = set(ri_index[i]).union(set(ri_index[j]))  # 并集
             intersection = list(intersection)
@@ -172,8 +172,8 @@ def load_data(dataset_str, sparse):
     for i in graph.keys():
         for j in graph[i]:
             G.add_edge(i, j, weight=1)
-    for i in range(3327):  # 原代码缩进有问题
-        for j in range(3327):
+    for i in range(features.shape[0]):  # 原代码缩进有问题
+        for j in range(features.shape[0]):
             try:
                 rs = nx.astar_path_length(G, i, j)  # A星算法求两点距离
             except nx.NetworkXNoPath:
