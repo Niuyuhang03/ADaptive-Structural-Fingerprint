@@ -123,7 +123,7 @@ def load_data(dataset_str, sparse):
     test_idx_range = np.sort(test_idx_reorder)
 
     if dataset_str == 'citeseer':
-        # citeseer测试数据集中有一些孤立的点，在test.index中没有对应的索引，当作特征全为0的节点
+        # citeseer测试数据集中有一些孤立的点，在test.index中没有对应的索引，这部分孤立点特征和标签设置为全0
         test_idx_range_full = range(min(test_idx_reorder), max(test_idx_reorder)+1)
 
         tx_extended = sp.lil_matrix((len(test_idx_range_full), x.shape[1]))
@@ -134,7 +134,7 @@ def load_data(dataset_str, sparse):
         ty_extended[test_idx_range - min(test_idx_range), :] = ty
         ty = ty_extended
 
-    features = sp.vstack((allx, tx)).tolil()
+    features = sp.vstack((allx, tx)).tolil()  # allx+tx是整个feature
     features[test_idx_reorder, :] = features[test_idx_range, :]
     adj = nx.adjacency_matrix(nx.from_dict_of_lists(graph))
 
