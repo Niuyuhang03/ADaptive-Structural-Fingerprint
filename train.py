@@ -34,8 +34,10 @@ parser.add_argument('--no-sparse', action='store_true', default=False, help='Not
 
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
-print("using cuda successfully:{}".format(args.cuda))
-sparse = not args.no_sparse  # sparse: default True
+print(args)
+if not args.cuda:
+    exit()
+args.sparse = not args.no_sparse  # sparse: default True
 
 random.seed(args.seed)
 np.random.seed(args.seed)
@@ -74,7 +76,7 @@ def sparse_to_tuple(sparse_mx):  # 稀疏矩阵features变元组
 
 
 # Load data
-adj, features, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask, labels, adj_ad = load_data(args.dataset, sparse)  # features为coo稀疏矩阵
+adj, features, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask, labels, adj_ad = load_data(args.dataset, args.sparse)  # features为coo稀疏矩阵
 features, spars = preprocess_features(features)  # 归一化，得到实矩阵features和元组spars
 features = np.array(features)
 features = scipy.sparse.csr_matrix(features)  # 稀疏矩阵features
@@ -82,7 +84,7 @@ features = scipy.sparse.csr_matrix(features)  # 稀疏矩阵features
 features = features.astype(np.float32)
 features = torch.FloatTensor(features.todense())
 
-if sparse:
+if args.sparse:
     model = RWR_process(nfeat=features.shape[1],
                         nhid=args.hidden,
                         nclass=int(labels.max()) + 1,
