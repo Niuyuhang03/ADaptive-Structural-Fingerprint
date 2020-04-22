@@ -90,7 +90,9 @@ if args.sparse:
                         nclass=int(labels.max()) + 1,
                         dropout=args.dropout,
                         nheads=args.nb_heads,
-                        alpha=args.alpha)
+                        alpha=args.alpha,
+                        adj_ad=adj_ad,
+                        dataset_str=args.dataset)
 else:
     model = ADSF(nfeat=features.shape[1],
                  nhid=args.hidden,
@@ -117,7 +119,7 @@ def train(epoch):
     t = time.time()
     model.train()
     optimizer.zero_grad()
-    output = model(features, adj, adj_ad)
+    output = model(features, adj)
     loss_train = F.nll_loss(output[idx_train], labels[idx_train])  # softmax+nllloss
     acc_train = accuracy(output[idx_train], labels[idx_train])
     loss_train.backward()
@@ -127,7 +129,7 @@ def train(epoch):
         # Evaluate validation set performance separately,
         # deactivates dropout during validation run.
         model.eval()
-        output = model(features, adj, adj_ad)
+        output = model(features, adj)
     
     loss_val = F.nll_loss(output[idx_val], labels[idx_val])
     acc_val = accuracy(output[idx_val], labels[idx_val])

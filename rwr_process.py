@@ -11,7 +11,7 @@ class RWRLayer(nn.Module):
     Random Walker Rstart layer
     """
 
-    def __init__(self, in_features, out_features, dropout, alpha, adj_ad, concat=True):
+    def __init__(self, in_features, out_features, dropout, alpha, adj_ad, dataset_str, concat=True):
         super(RWRLayer, self).__init__()
         self.dropout = dropout
         self.in_features = in_features
@@ -24,6 +24,7 @@ class RWRLayer(nn.Module):
         self.a = nn.Parameter(torch.zeros(size=(2*out_features, 1)))
         nn.init.xavier_uniform_(self.a.data, gain=1.414)
         self.leakyrelu = nn.LeakyReLU(self.alpha)
+        self.dataset_str = dataset_str
 
     def forward(self, input, adj):
         h = torch.mm(input, self.W)
@@ -31,9 +32,7 @@ class RWRLayer(nn.Module):
         a_input = torch.cat([h.repeat(1, N).view(N * N, -1), h.repeat(N, 1)], dim=1).view(N, -1, 2 * self.out_features)
         e = self.leakyrelu(torch.matmul(a_input, self.a).squeeze(2))
         s = self.adj_ad
-        fw = open('data/citeseer/dijskra_citeseer.pkl', 'rb')
-        dijkstra = pickle.load(fw)
-        Dijkstra = dijkstra.numpy()
+        Dijkstra = s.numpy()
         ri_all = []
         ri_index = []
         # You may replace adj.shape[0] with the size of dataset
@@ -81,11 +80,11 @@ class RWRLayer(nn.Module):
             ri_index.append(index_i[0])
             ri_all.append(ri)
 
-        fw = open('data/citeseer/ri_index_c_0.5_citeseer_highorder_1_x_abs.pkl', 'wb')
+        fw = open('data/{}/ri_index_c_0.5_{}_highorder_1_x_abs.pkl'.format(self.dataset_str, self.dataset_str), 'wb')
         pickle.dump(ri_index, fw)
         fw.close()
 
-        fw = open('data/citeseer/ri_all_c_0.5_citeseer_highorder_1_x_abs.pkl', 'wb')
+        fw = open('data/{}/ri_all_c_0.5_{}_highorder_1_x_abs.pkl'.format(self.dataset_str, self.dataset_str), 'wb')
         pickle.dump(ri_all, fw)
         fw.close()
 
@@ -93,7 +92,7 @@ class RWRLayer(nn.Module):
         zero_vec = -9e15 * torch.ones_like(e)
         k_vec = -9e15*torch.ones_like(e)
         adj = adj.cuda()
-        np.set_printoptions(threshold=np.nan)
+        np.set_printoptions(threshold=np.inf)
         attention = torch.where(adj > 0, e, zero_vec)
         attention = F.softmax(attention, dim=1)
         attention = F.dropout(attention, self.dropout, training=self.training)

@@ -44,7 +44,7 @@ class StructuralFingerprintLayer(nn.Module):
         zero_vec = -9e15 * torch.ones_like(e)
         k_vec = -9e15 * torch.ones_like(e)
         adj = adj.cuda()  # adj为图连通性
-        np.set_printoptions(threshold=np.nan)
+        np.set_printoptions(threshold=np.inf)
         attention = torch.where(adj > 0, e, zero_vec)  # 第一个参数是条件，第二个参数是满足时的值，第三个参数时不满足时的值
         attention = F.softmax(attention, dim=1)  # alpha
         attention = F.dropout(attention, self.dropout, training=self.training)

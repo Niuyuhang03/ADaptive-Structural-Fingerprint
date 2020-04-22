@@ -6,6 +6,7 @@ from scipy.sparse.linalg.eigen.arpack import eigsh
 import sys
 import torch
 import pickle
+import os
 
 
 def sample_mask(idx, l):
@@ -112,14 +113,14 @@ def load_data(dataset_str, sparse):
     names = ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'graph']
     objects = []
     for i in range(len(names)):
-        with open("data/citeseer/ind.{}.{}".format(dataset_str, names[i]), 'rb') as f:
+        with open("data/{}/ind.{}.{}".format(dataset_str, dataset_str, names[i]), 'rb') as f:
             if sys.version_info > (3, 0):
                 objects.append(pkl.load(f, encoding='latin1'))
             else:
                 objects.append(pkl.load(f))
 
     x, y, tx, ty, allx, ally, graph = tuple(objects)
-    test_idx_reorder = parse_index_file("data/citeseer/ind.{}.test.index".format(dataset_str))
+    test_idx_reorder = parse_index_file("data/{}/ind.{}.test.index".format(dataset_str, dataset_str))
     test_idx_range = np.sort(test_idx_reorder)
 
     if dataset_str == 'citeseer':  # citeseer测试数据集中有一些孤立的点，在test.index中没有对应的索引，这部分孤立点特征和标签设置为全0
@@ -165,32 +166,37 @@ def load_data(dataset_str, sparse):
     adj = torch.FloatTensor(np.array(adj.todense()))
     adj_delta = adj
     # caculate n-hop neighbors
-    G = nx.DiGraph()  # 创建有向图
-    # 原代码inf = pickle.load(open('data/citeseer/adj_citeseer.pkl', 'rb')),for i in range(len(inf)):，for j in range(len(inf[i])):,G.add_edge(i, inf[i][j], weight=1)没有文件，应当是图的连通性文件，
-    for i in graph.keys():
-        for j in graph[i]:
-            G.add_edge(i, j, weight=1)
-    for i in range(features.shape[0]):  # 原代码缩进有问题
-        for j in range(features.shape[0]):
-            try:
-                rs = nx.astar_path_length(G, i, j)  # A星算法求两点距离
-            except nx.NetworkXNoPath:
-                rs = 0
-            if rs == 0:
-                length = 0
-            else:
-                # print(rs)
-                length = rs  # 原代码为length = len(rs)
-            adj_delta[i][j] = length  # adj_delta为任意两点间最短距离，不连通则为0
-    a = open("data/citeseer/dijskra_citeseer.pkl", 'wb')  # 写入
-    pickle.dump(adj_delta, a)
+    if os.path.exists('data/{}/dijskra_{}.pkl'.format(dataset_str, dataset_str)):
+        fw = open('data/{}/dijskra_{}.pkl'.format(dataset_str, dataset_str), 'rb')
+        adj_delta = pickle.load(fw)
+        fw.close()
+    else:
+        G = nx.DiGraph()  # 创建有向图
+        # 原代码inf = pickle.load(open('data/citeseer/adj_citeseer.pkl', 'rb')),for i in range(len(inf)):，for j in range(len(inf[i])):,G.add_edge(i, inf[i][j], weight=1)没有文件，应当是图的连通性文件，
+        for i in graph.keys():
+            for j in graph[i]:
+                G.add_edge(i, j, weight=1)
+        for i in range(features.shape[0]):  # 原代码缩进有问题
+            for j in range(features.shape[0]):
+                try:
+                    rs = nx.astar_path_length(G, i, j)  # A星算法求两点距离
+                except nx.NetworkXNoPath:
+                    rs = 0
+                if rs == 0:
+                    length = 0
+                else:
+                    # print(rs)
+                    length = rs  # 原代码为length = len(rs)
+                adj_delta[i][j] = length  # adj_delta为任意两点间最短距离，不连通则为0
+        a = open("data/{}/dijskra_{}.pkl".format(dataset_str, dataset_str), 'wb')  # 写入
+        pickle.dump(adj_delta, a)
 
-    if not sparse:
-        fw = open('data/citeseer/ri_index_c_0.5_citeseer_highorder_1_x_abs.pkl', 'rb')  # adsf生成
+    if not sparse:  # adsf
+        fw = open('data/{}/ri_index_c_0.5_{}_highorder_1_x_abs.pkl'.format(dataset_str, dataset_str), 'rb')  # adsf生成
         ri_index = pickle.load(fw)
         fw.close()
 
-        fw = open('data/citeseer/ri_all_c_0.5_citeseer_highorder_1_x_abs.pkl', 'rb')  # adsf生成
+        fw = open('data/{}/ri_all_c_0.5_{}_highorder_1_x_abs.pkl'.format(dataset_str, dataset_str), 'rb')  # adsf生成
         ri_all = pickle.load(fw)
         fw.close()
         # Evaluate structural interaction between the structural fingerprints of node i and j
