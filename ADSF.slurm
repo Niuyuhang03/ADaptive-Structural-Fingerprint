@@ -8,5 +8,5 @@ time=`date +%Y%m%d-%H%M%S`
 mkdir ./ADSF/${time}
 source /home/LAB/anaconda3/etc/profile.d/conda.sh
 conda activate cuda9.1
-CUDA_VISIBLE_DEVICES=0 python train.py
+CUDA_VISIBLE_DEVICES=0 python train.py --no-sparse
 mv ./ADSF/ADSF_result_$SLURM_JOB_ID.log ./ADSF/${time}/ADSF_result.log
