@@ -110,58 +110,86 @@ def load_data(dataset_str, sparse):
     # ally: allx的特征，没有标签的数据的y值:[0,0,0,0,0,0,0]
     # graph: 图，格式如{index: [index of neighbour nodes]}
     # test: 测试集id
-    names = ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'graph']
-    objects = []
-    for i in range(len(names)):
-        with open("data/{}/ind.{}.{}".format(dataset_str, dataset_str, names[i]), 'rb') as f:
-            if sys.version_info > (3, 0):
-                objects.append(pkl.load(f, encoding='latin1'))
-            else:
-                objects.append(pkl.load(f))
+    if dataset_str == 'citeseer':
+        names = ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'graph']
+        objects = []
+        for i in range(len(names)):
+            with open("data/{}/ind.{}.{}".format(dataset_str, dataset_str, names[i]), 'rb') as f:
+                if sys.version_info > (3, 0):
+                    objects.append(pkl.load(f, encoding='latin1'))
+                else:
+                    objects.append(pkl.load(f))
 
-    x, y, tx, ty, allx, ally, graph = tuple(objects)
-    test_idx_reorder = parse_index_file("data/{}/ind.{}.test.index".format(dataset_str, dataset_str))
-    test_idx_range = np.sort(test_idx_reorder)
+        x, y, tx, ty, allx, ally, graph = tuple(objects)
+        test_idx_reorder = parse_index_file("data/{}/ind.{}.test.index".format(dataset_str, dataset_str))
+        test_idx_range = np.sort(test_idx_reorder)
 
-    if dataset_str == 'citeseer':  # citeseer测试数据集中有一些孤立的点，在test.index中没有对应的索引，这部分孤立点特征和标签设置为全0
+
+        # citeseer测试数据集中有一些孤立的点，在test.index中没有对应的索引，这部分孤立点特征和标签设置为全0，得到新的tx和ty
         test_idx_range_full = range(min(test_idx_reorder), max(test_idx_reorder)+1)
         tx_extended = sp.lil_matrix((len(test_idx_range_full), tx.shape[1]))
         tx_extended[test_idx_range - min(test_idx_range), :] = tx
         tx = tx_extended
-
         ty_extended = np.zeros((len(test_idx_range_full), ty.shape[1]))
         ty_extended[test_idx_range - min(test_idx_range), :] = ty
         ty = ty_extended
 
-    features = sp.vstack((allx, tx)).tolil()  # allx+tx是整个feature
-    features[test_idx_reorder, :] = features[test_idx_range, :]
-    adj = nx.adjacency_matrix(nx.from_dict_of_lists(graph))
+        features = sp.vstack((allx, tx)).tolil()  # allx+tx是整个feature
+        features[test_idx_reorder, :] = features[test_idx_range, :]
+        adj = nx.adjacency_matrix(nx.from_dict_of_lists(graph))
 
-    labels = np.vstack((ally, ty))
-    labels[test_idx_reorder, :] = labels[test_idx_range, :]
+        labels = np.vstack((ally, ty))
+        labels[test_idx_reorder, :] = labels[test_idx_range, :]
 
-    idx_test = test_idx_range.tolist()
-    idx_train = range(len(y))
-    idx_val = range(len(y), len(y)+500)
+        idx_test = test_idx_range.tolist()
+        idx_train = range(len(y))
+        idx_val = range(len(y), len(y) + 500)
+
+    else:  # FB15K237, WN18RR
+        idx_features_labels = np.genfromtxt("./data/{}/{}.content".format(dataset_str, dataset_str), dtype=np.dtype(str))
+        features = sp.lil_matrix(np.array(idx_features_labels[:, 2:-1], dtype=np.float32))
+
+        labels = list(map(lambda x: x.split(','), idx_features_labels[:, -1]))
+        labels, nclass = encode_onehot(labels)
+
+        names = idx_features_labels[:, 0]
+        idx = np.array(idx_features_labels[:, 1], dtype=np.int32)
+        idx_map = {j: i for i, j in enumerate(idx)}
+        edges_unordered = np.genfromtxt("./data/{}/{}.cites".format(dataset_str, dataset_str), dtype=np.int32)
+        # 将每组关系中的entity用索引表示
+        edges = np.array(list(map(idx_map.get, edges_unordered[:, :2].flatten())), dtype=np.int32).reshape(
+            edges_unordered[:, :2].shape)
+        # 构建图的邻接矩阵，用坐标形式的稀疏矩阵表示，非对称邻接矩阵
+        adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),
+                            shape=(labels.shape[0], labels.shape[0]), dtype=np.float32)
+
+        # build symmetric adjacency matrix
+        # 将非对称邻接矩阵转变为对称邻接矩阵，有向图变为无向图
+        adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
+
+        idx_train = range(len(idx_map) // 10 * 8)
+        idx_val = range(len(idx_map) // 10 * 8, len(idx_map) // 10 * 9)
+        idx_test = range(len(idx_map) // 10 * 9, len(idx_map))
 
     train_mask = sample_mask(idx_train, labels.shape[0])
     val_mask = sample_mask(idx_val, labels.shape[0])
     test_mask = sample_mask(idx_test, labels.shape[0])
 
-    y_train = np.zeros(labels.shape)
-    y_val = np.zeros(labels.shape)
-    y_test = np.zeros(labels.shape)
-    y_train[train_mask, :] = labels[train_mask, :]
-    y_val[val_mask, :] = labels[val_mask, :]
-    y_test[test_mask, :] = labels[test_mask, :]
+    # y_train = np.zeros(labels.shape)
+    # y_val = np.zeros(labels.shape)
+    # y_test = np.zeros(labels.shape)
+    # y_train[train_mask, :] = labels[train_mask, :]
+    # y_val[val_mask, :] = labels[val_mask, :]
+    # y_test[test_mask, :] = labels[test_mask, :]
+
     adj = adj.astype(np.float32)
-    adj_ad1 = adj
-    adj_sum_ad = np.sum(adj_ad1, axis=0)
-    adj_sum_ad = np.asarray(adj_sum_ad)
-    adj_sum_ad = adj_sum_ad.tolist()
-    adj_sum_ad = adj_sum_ad[0]
-    adj_ad_cov = adj
-    Mc = adj_ad_cov.tocoo()
+    # adj_ad1 = adj
+    # adj_sum_ad = np.sum(adj_ad1, axis=0)
+    # adj_sum_ad = np.asarray(adj_sum_ad)
+    # adj_sum_ad = adj_sum_ad.tolist()
+    # adj_sum_ad = adj_sum_ad[0]
+    # adj_ad_cov = adj
+    # Mc = adj_ad_cov.tocoo()
     adj = normalize_adj(adj + sp.eye(adj.shape[0]))
     adj = torch.FloatTensor(np.array(adj.todense()))
     adj_delta = adj

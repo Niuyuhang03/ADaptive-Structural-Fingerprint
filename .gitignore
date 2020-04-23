@@ -3,3 +3,4 @@ __pycache__/
 *.log
 RWR/*
 ADSF/*
+data/.DS_Store
