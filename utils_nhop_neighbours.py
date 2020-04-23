@@ -54,10 +54,13 @@ def parse_index_file(filename):
 
 
 def encode_onehot(labels):
-    classes = set(labels)
+    classes = set()
+    for label in labels:
+        classes |= set(label)
     classes_dict = {c: np.identity(len(classes))[i, :] for i, c in enumerate(classes)}
-    labels_onehot = np.array(list(map(classes_dict.get, labels)), dtype=np.int32)
-    return labels_onehot
+    labels_onehot = np.array([np.sum([classes_dict.get(l) for l in label], axis=0) for label in labels],
+                             dtype=np.int32)
+    return labels_onehot, len(classes)
 
 
 def structural_interaction(ri_index, ri_all, g):
@@ -201,9 +204,13 @@ def load_data(dataset_str, sparse):
     else:
         G = nx.DiGraph()  # 创建有向图
         # 原代码inf = pickle.load(open('data/citeseer/adj_citeseer.pkl', 'rb')),for i in range(len(inf)):，for j in range(len(inf[i])):,G.add_edge(i, inf[i][j], weight=1)没有文件，应当是图的连通性文件，
-        for i in graph.keys():
-            for j in graph[i]:
-                G.add_edge(i, j, weight=1)
+        if dataset_str == 'citeseer':
+            for i in graph.keys():
+                for j in graph[i]:
+                    G.add_edge(i, j, weight=1)
+        else:
+            for i in edges:
+                G.add_edge(i[0], i[1], weight=1)
         for i in range(features.shape[0]):  # 原代码缩进有问题
             for j in range(features.shape[0]):
                 try:

@@ -29,14 +29,14 @@ parser.add_argument('--nb_heads', type=int, default=8, help='Number of head atte
 parser.add_argument('--dropout', type=float, default=0.6, help='Dropout rate (1 - keep probability).')
 parser.add_argument('--alpha', type=float, default=0.2, help='Alpha for the leaky_relu.')
 parser.add_argument('--patience', type=int, default=100, help='Patience')
-parser.add_argument('--dataset', type=str, default='citeseer', help='DataSet of model')
+parser.add_argument('--dataset', type=str, default='FB15K237', help='DataSet of model')
 parser.add_argument('--no-sparse', action='store_true', default=False, help='Not use sparse matrix')  # 缺少args.no_sparse
 
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 print(args)
-if not args.cuda:
-    exit()
+# if not args.cuda:
+#     exit()
 args.sparse = not args.no_sparse  # sparse: default True
 
 random.seed(args.seed)
