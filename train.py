@@ -37,7 +37,7 @@ args.cuda = not args.no_cuda and torch.cuda.is_available()
 print(args)
 if not args.cuda:
     exit()
-args.sparse = not args.no_sparse  # sparse: default True
+args.sparse = not args.no_sparse  # args.sparse: default True, RWR
 
 random.seed(args.seed)
 np.random.seed(args.seed)
