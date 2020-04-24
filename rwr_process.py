@@ -41,16 +41,16 @@ class RWRLayer(nn.Module):
             # You may replace 1,4 with the .n-hop neighbors you want
             index_i = np.where((Dijkstra[i] < 4) & (Dijkstra[i] > 1))
             I = np.eye((len(index_i[0]) + 1), dtype=int)
-            ei = np.array([0 for i in range(len(index_i[0]) + 1)])
-            ei[0] = 1
+            ei = np.array([[0] for i in range(len(index_i[0]) + 1)])
+            ei[0] = [1]
             # for q in range((len(index_i[0]) + 1)):
             #     if q == 0:
             #         ei.append([1])
             #     else:
             #         ei.append([0])
-            W = np.array([[0 for i in range((len(index_i[0])) + 1)] for j in range((len(index_i[0])) + 1)])
-            W[0, 1:] = 1
-            W[1:, 0] = 1
+            W = np.array([[0. for i in range((len(index_i[0])) + 1)] for j in range((len(index_i[0])) + 1)])
+            W[0, 1:] = 1.
+            W[1:, 0] = 1.
             # for j in range((len(index_i[0])) + 1):
             #     w = []
             #     for k in range((len(index_i[0])) + 1):
