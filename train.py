@@ -31,6 +31,8 @@ parser.add_argument('--alpha', type=float, default=0.2, help='Alpha for the leak
 parser.add_argument('--patience', type=int, default=100, help='Patience')
 parser.add_argument('--dataset', type=str, default='citeseer', help='DataSet of model')
 parser.add_argument('--no-sparse', action='store_true', default=False, help='Not use sparse matrix')  # 缺少args.no_sparse
+# 实验名称，用于生成.pkl文件夹
+parser.add_argument('--experiment', type=str, default='GAT', help='Name of current experiment.')
 
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -136,13 +138,8 @@ def train(epoch):
     loss_val = F.nll_loss(output[idx_val], labels[idx_val])
     acc_val = accuracy(output[idx_val], labels[idx_val])
 
-    file_handle1 = open('auc.txt', mode='a')
-    print(str(epoch), file=file_handle1)
-    print("  ", file=file_handle1)
-    print(str(acc_val.data.item()), file=file_handle1)
-    print("  ", file=file_handle1)
-    print(str(loss_val.data.item()), file=file_handle1)
-    print("\r\n", file=file_handle1)
+    file_handle1 = open('./{}/auc.txt'.format(args.experiment), mode='a')
+    print("epoch: {}, acc_val: {}, loss_val: {}".format(epoch, acc_val.data.item(), loss_val.data.item()), file=file_handle1)
     file_handle1.close()
 
     print('Epoch: {:04d}'.format(epoch+1),
@@ -163,7 +160,7 @@ best = args.epochs + 1
 best_epoch = 0
 for epoch in range(args.epochs):
     loss_values.append(train(epoch))
-    torch.save(model.state_dict(), '{}.pkl'.format(epoch))
+    torch.save(model.state_dict(), './{}/{}.pkl'.format(args.experiment, epoch))
     if loss_values[-1] < best:
         best = loss_values[-1]
         best_epoch = epoch
@@ -173,14 +170,14 @@ for epoch in range(args.epochs):
 
     if bad_counter == args.patience:
         break
-    files = glob.glob('*.pkl')
+    files = glob.glob('./{}/*.pkl'.format(args.experiment))
     for file in files:
-        epoch_nb = int(file.split('.')[0])
+        epoch_nb = int(file.split('/')[-1].split('.')[0])
         if epoch_nb < best_epoch:
             os.remove(file)
-files = glob.glob('*.pkl')
+files = glob.glob('./{}/*.pkl'.format(args.experiment))
 for file in files:
-    epoch_nb = int(file.split('.')[0])
+    epoch_nb = int(file.split('/')[-1].split('.')[0])
     if epoch_nb > best_epoch:
         os.remove(file)
 
@@ -189,4 +186,4 @@ print("Total time elapsed: {:.4f}s".format(time.time() - t_total))
 
 # Restore best model
 print('Loading {}th epoch'.format(best_epoch))
-model.load_state_dict(torch.load('{}.pkl'.format(best_epoch)))
+# model.load_state_dict(torch.load('./{}/{}.pkl'.format(args.experiment, best_epoch)))
