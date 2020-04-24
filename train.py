@@ -104,8 +104,6 @@ else:
                  alpha=args.alpha,
                  adj_ad=adj_ad)
 optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-if args.cuda:
-    model.cuda()
 
 if args.cuda:
     model.cuda()
