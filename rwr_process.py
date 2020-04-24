@@ -32,6 +32,7 @@ class RWRLayer(nn.Module):
         a_input = torch.cat([h.repeat(1, N).view(N * N, -1), h.repeat(N, 1)], dim=1).view(N, -1, 2 * self.out_features)
         e = self.leakyrelu(torch.matmul(a_input, self.a).squeeze(2))
         s = self.adj_ad
+
         Dijkstra = s.numpy()
         ri_all = []
         ri_index = []
@@ -40,30 +41,32 @@ class RWRLayer(nn.Module):
             # You may replace 1,4 with the .n-hop neighbors you want
             index_i = np.where((Dijkstra[i] < 4) & (Dijkstra[i] > 1))
             I = np.eye((len(index_i[0]) + 1), dtype=int)
-            ei = []
-            for q in range((len(index_i[0]) + 1)):
-                if q == 0:
-                    ei.append([1])
-                else:
-                    ei.append([0])
-            W = []
-            for j in range((len(index_i[0])) + 1):
-                w = []
-                for k in range((len(index_i[0])) + 1):
-                    if j == 0:
-                        if k == 0:
-                            w.append(float(0))
-                        else:
-                            w.append(float(1))
-                    else:
-                        if k == 0:
-                            w.append(float(1))
-                        else:
-                            w.append(float(0))
-                W.append(w)
+            ei = np.array([0 for i in range(len(index_i[0]) + 1)])
+            ei[0] = 1
+            # for q in range((len(index_i[0]) + 1)):
+            #     if q == 0:
+            #         ei.append([1])
+            #     else:
+            #         ei.append([0])
+            W = np.array([[0 for i in range((len(index_i[0])) + 1)] for j in range((len(index_i[0])) + 1)])
+            W[0, 1:] = 1
+            W[1:, 0] = 1
+            # for j in range((len(index_i[0])) + 1):
+            #     w = []
+            #     for k in range((len(index_i[0])) + 1):
+            #         if j == 0:
+            #             if k == 0:
+            #                 w.append(float(0))
+            #             else:
+            #                 w.append(float(1))
+            #         else:
+            #             if k == 0:
+            #                 w.append(float(1))
+            #             else:
+            #                 w.append(float(0))
+            #     W.append(w)
             # the choice of the c parameter in RWR
             c = 0.5
-            W = np.array(W)
             rw_left = (I - c * W)
             try:
                 rw_left = np.linalg.inv(rw_left)
@@ -71,7 +74,6 @@ class RWRLayer(nn.Module):
                 rw_left = rw_left
             else:
                 rw_left = rw_left
-            ei = np.array(ei)
             rw_left = torch.tensor(rw_left, dtype=torch.float32)
             ei = torch.tensor(ei, dtype=torch.float32)
             ri = torch.mm(rw_left, ei)
