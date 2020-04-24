@@ -8,5 +8,5 @@ time=`date +%Y%m%d-%H%M%S`
 mkdir ./RWR/${time}
 source /home/LAB/anaconda3/etc/profile.d/conda.sh
 conda activate cuda9.1
-CUDA_VISIBLE_DEVICES=0 python train.py --dataset citeseer
+CUDA_VISIBLE_DEVICES=0 python train.py --dataset citeseer --experiment RWR/${time}
 mv ./RWR/RWR_result_$SLURM_JOB_ID.log ./RWR/${time}/RWR_result.log
