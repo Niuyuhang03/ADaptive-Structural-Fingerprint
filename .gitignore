@@ -4,3 +4,5 @@ __pycache__/
 RWR/*
 ADSF/*
 data/.DS_Store
+*.pkl
+auc.txt
