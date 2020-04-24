@@ -92,7 +92,7 @@ class RWRLayer(nn.Module):
 
         e = e.cuda()
         zero_vec = -9e15 * torch.ones_like(e)
-        k_vec = -9e15*torch.ones_like(e)
+        # k_vec = -9e15*torch.ones_like(e)
         adj = adj.cuda()
         np.set_printoptions(threshold=np.inf)
         attention = torch.where(adj > 0, e, zero_vec)
