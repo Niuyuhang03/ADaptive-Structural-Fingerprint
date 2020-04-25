@@ -32,25 +32,27 @@ class RWRLayer(nn.Module):
         a_input = torch.cat([h.repeat(1, N).view(N * N, -1), h.repeat(N, 1)], dim=1).view(N, -1, 2 * self.out_features)
         e = self.leakyrelu(torch.matmul(a_input, self.a).squeeze(2))
         s = self.adj_ad
+        e = e.cuda()
+        s = s.cuda()
 
-        Dijkstra = s.numpy()
+        # Dijkstra = s.numpy()
         ri_all = []
         ri_index = []
         # You may replace adj.shape[0] with the size of dataset
         for i in range(adj.shape[0]):
             # You may replace 1,4 with the .n-hop neighbors you want
-            index_i = np.where((Dijkstra[i] < 4) & (Dijkstra[i] > 1))
-            I = np.eye((len(index_i[0]) + 1), dtype=int)
-            ei = np.array([[0] for i in range(len(index_i[0]) + 1)])
-            ei[0] = [1]
+            index_i = torch.where((s[i] < 4) & (s[i] > 1))
+            I = torch.eye((len(index_i[0]) + 1)).cuda()
+            ei = torch.FloatTensor([[0] for _ in range(len(index_i[0]) + 1)]).cuda()
+            ei[0] = torch.FloatTensor([1])
             # for q in range((len(index_i[0]) + 1)):
             #     if q == 0:
             #         ei.append([1])
             #     else:
             #         ei.append([0])
-            W = np.array([[0. for i in range((len(index_i[0])) + 1)] for j in range((len(index_i[0])) + 1)])
-            W[0, 1:] = 1.
-            W[1:, 0] = 1.
+            W = torch.FloatTensor([[0 for i in range((len(index_i[0])) + 1)] for j in range((len(index_i[0])) + 1)]).cuda()
+            W[0, 1:] = 1
+            W[1:, 0] = 1
             # for j in range((len(index_i[0])) + 1):
             #     w = []
             #     for k in range((len(index_i[0])) + 1):
@@ -69,17 +71,17 @@ class RWRLayer(nn.Module):
             c = 0.5
             rw_left = (I - c * W)
             try:
-                rw_left = np.linalg.inv(rw_left)
+                rw_left = torch.inverse(rw_left)  # 求逆
             except:
                 rw_left = rw_left
-            else:
-                rw_left = rw_left
-            rw_left = torch.tensor(rw_left, dtype=torch.float32)
-            ei = torch.tensor(ei, dtype=torch.float32)
+            # else:
+            #     rw_left = rw_left
+            # rw_left = torch.tensor(rw_left, dtype=torch.float32)
+            # ei = torch.tensor(ei, dtype=torch.float32)
             ri = torch.mm(rw_left, ei)
             ri = torch.transpose(ri, 1, 0)
-            ri = abs(ri[0]).numpy().tolist()
-            ri_index.append(index_i[0])
+            ri = abs(ri[0]).cpu().numpy().tolist()
+            ri_index.append(index_i[0].cpu().numpy())
             ri_all.append(ri)
 
         fw = open('data/{}/ri_index_c_0.5_{}_highorder_1_x_abs.pkl'.format(self.dataset_str, self.dataset_str), 'wb')
@@ -90,7 +92,6 @@ class RWRLayer(nn.Module):
         pickle.dump(ri_all, fw)
         fw.close()
 
-        e = e.cuda()
         zero_vec = -9e15 * torch.ones_like(e)
         # k_vec = -9e15*torch.ones_like(e)
         adj = adj.cuda()
