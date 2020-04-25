@@ -41,7 +41,7 @@ class RWRLayer(nn.Module):
         # You may replace adj.shape[0] with the size of dataset
         for i in range(adj.shape[0]):
             # You may replace 1,4 with the .n-hop neighbors you want
-            index_i = torch.where((s[i] < 4) & (s[i] > 1))
+            index_i = torch.nonzero((s[i] < 4) & (s[i] > 1), as_tuple=True)  # replace torch.where(condition)
             I = torch.eye((len(index_i[0]) + 1)).cuda()
             ei = torch.FloatTensor([[0] for _ in range(len(index_i[0]) + 1)]).cuda()
             ei[0] = torch.FloatTensor([1])
