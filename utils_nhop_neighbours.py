@@ -150,7 +150,7 @@ def load_data(dataset_str, sparse):
 
     else:  # FB15K237, WN18RR
         idx_features_labels = np.genfromtxt("./data/{}/{}.content".format(dataset_str, dataset_str), dtype=np.dtype(str))
-        features = sp.lil_matrix(np.array(idx_features_labels[:, 2:-1], dtype=np.float32))
+        features = np.array(idx_features_labels[:, 2:-1], dtype=np.float32)
 
         labels = list(map(lambda x: x.split(','), idx_features_labels[:, -1]))
         labels, nclass = encode_onehot(labels)
