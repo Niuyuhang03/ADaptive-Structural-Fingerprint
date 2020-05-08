@@ -123,7 +123,7 @@ def train(epoch):
     optimizer.zero_grad()
     output = model(features, adj)
     loss_train = multi_labels_nll_loss(output[idx_train], labels[idx_train])  # softmax+nllloss
-    acc_train = accuracy(output[idx_train], labels[idx_train], args.cuda)
+    acc_train, preds = accuracy(output[idx_train], labels[idx_train], args.cuda)
     loss_train.backward()
     optimizer.step()
 
@@ -134,7 +134,7 @@ def train(epoch):
         output = model(features, adj)
     
     loss_val = multi_labels_nll_loss(output[idx_val], labels[idx_val])
-    acc_val = accuracy(output[idx_val], labels[idx_val], args.cuda)
+    acc_val, preds = accuracy(output[idx_val], labels[idx_val], args.cuda)
 
     file_handle1 = open('./{}/auc.txt'.format(args.experiment), mode='a')
     print("epoch: {:04d}, acc_val: {:.4f}, loss_val: {:.4f}, time: {:.4f}s".format(epoch, acc_val.data.item(), loss_val.data.item(), time.time() - t), file=file_handle1)
