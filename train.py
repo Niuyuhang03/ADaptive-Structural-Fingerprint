@@ -137,14 +137,14 @@ def train(epoch):
     acc_val, preds = accuracy(output[idx_val], labels[idx_val], args.cuda)
 
     file_handle1 = open('./{}/auc.txt'.format(args.experiment), mode='a')
-    print("epoch: {:04d}, acc_val: {:.4f}, loss_val: {:.4f}, time: {:.4f}s".format(epoch, acc_val.data.item(), loss_val.data.item(), time.time() - t), file=file_handle1)
+    print("epoch: {:04d}, acc_val: {:.4f}, loss_val: {:.4f}, time: {:.4f}s".format(epoch, acc_val, loss_val.item(), time.time() - t), file=file_handle1)
     file_handle1.close()
 
     print('Epoch: {:04d}'.format(epoch+1),
-          'loss_train: {:.4f}'.format(loss_train.data.item()),
-          'acc_train: {:.4f}'.format(acc_train.data.item()),
-          'loss_val: {:.4f}'.format(loss_val.data.item()),
-          'acc_val: {:.4f}'.format(acc_val.data.item()),
+          'loss_train: {:.4f}'.format(loss_train.item()),
+          'acc_train: {:.4f}'.format(acc_train),
+          'loss_val: {:.4f}'.format(loss_val.item()),
+          'acc_val: {:.4f}'.format(acc_val),
           'time: {:.4f}s'.format(time.time() - t))
     
     return loss_val.data.item()
