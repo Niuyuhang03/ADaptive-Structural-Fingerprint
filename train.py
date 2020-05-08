@@ -12,7 +12,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
 import scipy.sparse as sp
-from utils_nhop_neighbours import load_data, accuracy
+from utils_nhop_neighbours import load_data, accuracy, multi_labels_nll_loss
 from models import ADSF, RWR_process
 
 
@@ -78,7 +78,7 @@ def sparse_to_tuple(sparse_mx):  # 稀疏矩阵features变元组
 
 
 # Load data
-adj, features, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask, labels, adj_ad = load_data(args.dataset, args.sparse)  # features为coo稀疏矩阵
+adj, features, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask, labels, nclass, adj_ad = load_data(args.dataset, args.sparse)  # features为coo稀疏矩阵
 features, spars = preprocess_features(features)  # 归一化，得到实矩阵features和元组spars
 features = np.array(features)
 features = scipy.sparse.csr_matrix(features)  # 稀疏矩阵features
@@ -89,7 +89,7 @@ features = torch.FloatTensor(features.todense())
 if args.sparse:
     model = RWR_process(nfeat=features.shape[1],
                         nhid=args.hidden,
-                        nclass=int(labels.max()) + 1,
+                        nclass=nclass,
                         dropout=args.dropout,
                         nheads=args.nb_heads,
                         alpha=args.alpha,
@@ -98,7 +98,7 @@ if args.sparse:
 else:
     model = ADSF(nfeat=features.shape[1],
                  nhid=args.hidden,
-                 nclass=int(labels.max()) + 1,
+                 nclass=nclass,
                  dropout=args.dropout,
                  nheads=args.nb_heads,
                  alpha=args.alpha,
@@ -122,8 +122,8 @@ def train(epoch):
     model.train()
     optimizer.zero_grad()
     output = model(features, adj)
-    loss_train = F.nll_loss(output[idx_train], labels[idx_train])  # softmax+nllloss
-    acc_train = accuracy(output[idx_train], labels[idx_train])
+    loss_train = multi_labels_nll_loss(output[idx_train], labels[idx_train])  # softmax+nllloss
+    acc_train = accuracy(output[idx_train], labels[idx_train], args.cuda)
     loss_train.backward()
     optimizer.step()
 
@@ -133,8 +133,8 @@ def train(epoch):
         model.eval()
         output = model(features, adj)
     
-    loss_val = F.nll_loss(output[idx_val], labels[idx_val])
-    acc_val = accuracy(output[idx_val], labels[idx_val])
+    loss_val = multi_labels_nll_loss(output[idx_val], labels[idx_val])
+    acc_val = accuracy(output[idx_val], labels[idx_val], args.cuda)
 
     file_handle1 = open('./{}/auc.txt'.format(args.experiment), mode='a')
     print("epoch: {:04d}, acc_val: {:.4f}, loss_val: {:.4f}, time: {:.4f}s".format(epoch, acc_val.data.item(), loss_val.data.item(), time.time() - t), file=file_handle1)

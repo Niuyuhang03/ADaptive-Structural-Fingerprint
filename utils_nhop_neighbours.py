@@ -143,6 +143,7 @@ def load_data(dataset_str, sparse):
 
         labels = np.vstack((ally, ty))
         labels[test_idx_reorder, :] = labels[test_idx_range, :]
+        nclass = labels.shape[1]
 
         idx_test = test_idx_range.tolist()
         idx_train = range(len(y))
@@ -237,11 +238,11 @@ def load_data(dataset_str, sparse):
         # Evaluate structural interaction between the structural fingerprints of node i and j
         adj_delta = structural_interaction(ri_index, ri_all, adj_delta)  # 构建结构信息
 
-    labels = torch.LongTensor(np.where(labels)[1])
+    labels = torch.LongTensor(labels)
     idx_train = torch.LongTensor(idx_train)
     idx_val = torch.LongTensor(idx_val)
     idx_test = torch.LongTensor(idx_test)
-    return adj, features, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask, labels, adj_delta
+    return adj, features, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask, labels, nclass, adj_delta
 
 
 def normalize_adj(mx):
@@ -263,9 +264,28 @@ def normalize_features(mx):
     return mx
 
 
-def accuracy(output, labels):
-    preds = output.max(1)[1].type_as(labels)
-    correct = preds.eq(labels).double()
-    correct = correct.sum()
-    return correct / len(labels)
+# def accuracy(output, labels):
+#     preds = output.max(1)[1].type_as(labels)
+#     correct = preds.eq(labels).double()
+#     correct = correct.sum()
+#     return correct / len(labels)
 
+def accuracy(output, labels, is_cuda):
+    label_1_num = torch.sum(labels, dim=1, dtype=torch.int8)  # labels每行1的个数
+    cnt = labels.sum().item()  # labels所有1的个数
+    indices = torch.sort(output, descending=True)[1]  # output按行排序，得到下标
+    preds = torch.zeros_like(labels, dtype=torch.int8)
+    if is_cuda:
+        preds = preds.cuda()
+    for i in range(label_1_num.shape[0]):
+        predict_1_index = indices[i][:label_1_num[i]]
+        preds[i][predict_1_index] = 1
+    correct = preds.type_as(labels).mul(labels).sum()
+    return correct.item() / cnt, preds
+
+
+def multi_labels_nll_loss(output, labels):
+    # labels和output按位点乘，结果相加，除以labels中1的总数，作为适用于多标签的nll_loss。
+    loss = -labels.type_as(output).mul(output).sum()
+    n = labels.sum().item()
+    return loss / n
