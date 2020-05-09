@@ -48,14 +48,16 @@ if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
 
-def preprocess_features(features):  # 将features按行归一化，features为coo稀疏矩阵格式
+def preprocess_features(features, dataset_str):  # 将features按行归一化，features为coo稀疏矩阵格式
     """Row-normalize feature matrix and convert to tuple representation"""
     rowsum = np.array(features.sum(1))  # 每行求和
     r_inv = (1 / rowsum).flatten()  # 求倒数，展开，原代码为r_inv = np.power(rowsum, -1).flatten()，无法运行-1次方
     r_inv[np.isinf(r_inv)] = 0.  # 处理nan
     r_mat_inv = sp.diags(r_inv)  # 构建稀疏的对角矩阵
     features = r_mat_inv.dot(features)
-    return features.todense(), sparse_to_tuple(features)
+    if dataset_str == 'citeseer':
+        features = features.todense()
+    return features, sparse_to_tuple(features)
 
 
 def sparse_to_tuple(sparse_mx):  # 稀疏矩阵features变元组
@@ -79,12 +81,12 @@ def sparse_to_tuple(sparse_mx):  # 稀疏矩阵features变元组
 
 # Load data
 adj, features, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask, labels, nclass, adj_ad = load_data(args.dataset, args.sparse)  # features为coo稀疏矩阵
-features, spars = preprocess_features(features)  # 归一化，得到实矩阵features和元组spars
-features = np.array(features)
-features = scipy.sparse.csr_matrix(features)  # 稀疏矩阵features
-
-features = features.astype(np.float32)
-features = torch.FloatTensor(features.todense())
+features, spars = preprocess_features(features, args.dataset,)  # 归一化，得到实矩阵features和元组spars
+features = np.array(features, dtype=np.float32)
+# features = scipy.sparse.csr_matrix(features)  # 稀疏矩阵features
+#
+# features = features.astype(np.float32)
+features = torch.FloatTensor(features)
 
 if args.sparse:
     model = RWR_process(nfeat=features.shape[1],

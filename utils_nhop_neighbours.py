@@ -156,7 +156,6 @@ def load_data(dataset_str, sparse):
         labels = list(map(lambda x: x.split(','), idx_features_labels[:, -1]))
         labels, nclass = encode_onehot(labels)
 
-        names = idx_features_labels[:, 0]
         idx = np.array(idx_features_labels[:, 1], dtype=np.int32)
         idx_map = {j: i for i, j in enumerate(idx)}
         edges_unordered = np.genfromtxt("./data/{}/{}.cites".format(dataset_str, dataset_str), dtype=np.int32)
