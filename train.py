@@ -57,7 +57,7 @@ def preprocess_features(features, dataset_str):  # 将features按行归一化，
     features = r_mat_inv.dot(features)
     if dataset_str == 'citeseer':
         features = features.todense()
-    return features, sparse_to_tuple(features)
+    return features# , sparse_to_tuple(features)
 
 
 def sparse_to_tuple(sparse_mx):  # 稀疏矩阵features变元组
@@ -81,7 +81,7 @@ def sparse_to_tuple(sparse_mx):  # 稀疏矩阵features变元组
 
 # Load data
 adj, features, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask, labels, nclass, adj_ad = load_data(args.dataset, args.sparse)  # features为coo稀疏矩阵
-features, spars = preprocess_features(features, args.dataset,)  # 归一化，得到实矩阵features和元组spars
+features = preprocess_features(features, args.dataset)  # 归一化，得到实矩阵features和元组spars
 features = np.array(features, dtype=np.float32)
 # features = scipy.sparse.csr_matrix(features)  # 稀疏矩阵features
 #
