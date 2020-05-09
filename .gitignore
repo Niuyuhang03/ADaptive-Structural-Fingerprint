@@ -4,5 +4,5 @@ __pycache__/
 RWR/*
 ADSF/*
 data/.DS_Store
-*.pkl
+\d+.pkl
 auc.txt
