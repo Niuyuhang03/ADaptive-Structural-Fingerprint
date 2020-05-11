@@ -33,14 +33,16 @@ class RWRLayer(nn.Module):
         a_input = torch.cat([h.repeat(1, N).view(N * N, -1), h.repeat(N, 1)], dim=1).view(N, -1, 2 * self.out_features)
         e = self.leakyrelu(torch.matmul(a_input, self.a).squeeze(2))
         s = self.adj_ad
+        adj = self.adj
         e = e.cuda()
         s = s.cuda()
+        adj = adj.cuda()
 
         # Dijkstra = s.numpy()
         ri_all = []
         ri_index = []
         # You may replace adj.shape[0] with the size of dataset
-        for i in range(self.adj.shape[0]):
+        for i in range(adj.shape[0]):
             # You may replace 1,4 with the .n-hop neighbors you want
             index_i = torch.nonzero((s[i] < 4) & (s[i] > 1), as_tuple=True)  # replace torch.where(condition)
             I = torch.eye((len(index_i[0]) + 1)).cuda()
@@ -97,7 +99,8 @@ class RWRLayer(nn.Module):
         # k_vec = -9e15*torch.ones_like(e)
         # adj = adj.cuda()
         # np.set_printoptions(threshold=np.inf)
-        attention = torch.where(self.adj > 0, e, zero_vec)
+
+        attention = torch.where(adj > 0, e, zero_vec)
         attention = F.softmax(attention, dim=1)
         attention = F.dropout(attention, self.dropout, training=self.training)
         h_prime = torch.matmul(attention, h)

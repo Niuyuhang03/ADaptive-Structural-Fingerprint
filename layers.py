@@ -36,17 +36,19 @@ class StructuralFingerprintLayer(nn.Module):
         a_input = torch.cat([h.repeat(1, N).view(N * N, -1), h.repeat(N, 1)], dim=1).view(N, -1, 2 * self.out_features)
         e = self.leakyrelu(torch.matmul(a_input, self.a).squeeze(2))  # leakyrelu(h * w * a)，即leakyrelu的eij
         s = self.adj_ad  # sij
+        adj = self.adj
         e = e.cuda()
         s = s.cuda()
+        adj = adj.cuda()  # adj为图连通性
 
         # combine sij and eij
         e = abs(self.W_ei) * e + abs(self.W_si) * s  # aij=前半部分+后半部分（均未softmax）
 
         zero_vec = -9e15 * torch.ones_like(e)
         # k_vec = -9e15 * torch.ones_like(e)
-        # adj = self.adj.cuda()  # adj为图连通性
+
         np.set_printoptions(threshold=np.inf)
-        attention = torch.where(self.adj > 0, e, zero_vec)  # 第一个参数是条件，第二个参数是满足时的值，第三个参数时不满足时的值
+        attention = torch.where(adj > 0, e, zero_vec)  # 第一个参数是条件，第二个参数是满足时的值，第三个参数时不满足时的值
         attention = F.softmax(attention, dim=1)  # alpha
         attention = F.dropout(attention, self.dropout, training=self.training)
         h_prime = torch.matmul(attention, h)  # h=alpha * W * h

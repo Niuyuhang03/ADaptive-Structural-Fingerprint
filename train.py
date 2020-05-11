@@ -107,9 +107,11 @@ else:
                  alpha=args.alpha,
                  adj_ad=adj_ad,
                  adj=adj)
-print("Using {} gpu".format(torch.cuda.device_count()))
-if torch.cuda.device_count() > 1:  # 多卡
-    model = torch.nn.DataParallel(model)
+
+if args.cuda:
+    print("Using {} gpu".format(torch.cuda.device_count()))
+    if torch.cuda.device_count() > 1:  # 多卡
+        model = torch.nn.DataParallel(model)
 optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
 if args.cuda:
