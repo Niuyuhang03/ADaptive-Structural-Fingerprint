@@ -140,7 +140,7 @@ def train(epoch):
         # Evaluate validation set performance separately,
         # deactivates dropout during validation run.
         model.eval()
-        output = model(features, adj)
+        output = model(features)
     
     loss_val = multi_labels_nll_loss(output[idx_val], labels[idx_val])
     acc_val, preds = accuracy(output[idx_val], labels[idx_val], args.cuda)
