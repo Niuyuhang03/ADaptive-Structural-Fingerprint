@@ -11,7 +11,7 @@ class StructuralFingerprintLayer(nn.Module):
     adaptive structural fingerprint layer
     """
 
-    def __init__(self, in_features, out_features, dropout, alpha, adj_ad, concat=True):
+    def __init__(self, in_features, out_features, dropout, alpha, adj_ad, adj, concat=True):
         super(StructuralFingerprintLayer, self).__init__()
         self.dropout = dropout
         self.in_features = in_features
@@ -19,6 +19,7 @@ class StructuralFingerprintLayer(nn.Module):
         self.alpha = alpha
         self.concat = concat
         self.adj_ad = adj_ad
+        self.adj = adj
         self.W = nn.Parameter(torch.zeros(size=(in_features, out_features)))
         nn.init.xavier_uniform_(self.W.data, gain=1.414)  # 均匀分布
         self.a = nn.Parameter(torch.zeros(size=(2 * out_features, 1)))
@@ -29,7 +30,7 @@ class StructuralFingerprintLayer(nn.Module):
         self.W_ei = nn.Parameter(torch.zeros(size=(1, 1)))
         nn.init.xavier_uniform_(self.W_ei.data, gain=1.414)
 
-    def forward(self, input, adj):
+    def forward(self, input):
         h = torch.mm(input, self.W)  # h * w
         N = h.size()[0]
         a_input = torch.cat([h.repeat(1, N).view(N * N, -1), h.repeat(N, 1)], dim=1).view(N, -1, 2 * self.out_features)
@@ -43,9 +44,9 @@ class StructuralFingerprintLayer(nn.Module):
 
         zero_vec = -9e15 * torch.ones_like(e)
         # k_vec = -9e15 * torch.ones_like(e)
-        adj = adj.cuda()  # adj为图连通性
+        # adj = self.adj.cuda()  # adj为图连通性
         np.set_printoptions(threshold=np.inf)
-        attention = torch.where(adj > 0, e, zero_vec)  # 第一个参数是条件，第二个参数是满足时的值，第三个参数时不满足时的值
+        attention = torch.where(self.adj > 0, e, zero_vec)  # 第一个参数是条件，第二个参数是满足时的值，第三个参数时不满足时的值
         attention = F.softmax(attention, dim=1)  # alpha
         attention = F.dropout(attention, self.dropout, training=self.training)
         h_prime = torch.matmul(attention, h)  # h=alpha * W * h

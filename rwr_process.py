@@ -11,7 +11,7 @@ class RWRLayer(nn.Module):
     Random Walker Rstart layer
     """
 
-    def __init__(self, in_features, out_features, dropout, alpha, adj_ad, dataset_str, concat=True):
+    def __init__(self, in_features, out_features, dropout, alpha, adj_ad, adj, dataset_str, concat=True):
         super(RWRLayer, self).__init__()
         self.dropout = dropout
         self.in_features = in_features
@@ -19,6 +19,7 @@ class RWRLayer(nn.Module):
         self.alpha = alpha
         self.concat = concat
         self.adj_ad = adj_ad
+        self.adj = adj
         self.W = nn.Parameter(torch.zeros(size=(in_features, out_features)))
         nn.init.xavier_uniform_(self.W.data, gain=1.414)
         self.a = nn.Parameter(torch.zeros(size=(2*out_features, 1)))
@@ -26,7 +27,7 @@ class RWRLayer(nn.Module):
         self.leakyrelu = nn.LeakyReLU(self.alpha)
         self.dataset_str = dataset_str
 
-    def forward(self, input, adj):
+    def forward(self, input):
         h = torch.mm(input, self.W)
         N = h.size()[0]
         a_input = torch.cat([h.repeat(1, N).view(N * N, -1), h.repeat(N, 1)], dim=1).view(N, -1, 2 * self.out_features)
@@ -39,7 +40,7 @@ class RWRLayer(nn.Module):
         ri_all = []
         ri_index = []
         # You may replace adj.shape[0] with the size of dataset
-        for i in range(adj.shape[0]):
+        for i in range(self.adj.shape[0]):
             # You may replace 1,4 with the .n-hop neighbors you want
             index_i = torch.nonzero((s[i] < 4) & (s[i] > 1), as_tuple=True)  # replace torch.where(condition)
             I = torch.eye((len(index_i[0]) + 1)).cuda()
@@ -96,7 +97,7 @@ class RWRLayer(nn.Module):
         # k_vec = -9e15*torch.ones_like(e)
         # adj = adj.cuda()
         # np.set_printoptions(threshold=np.inf)
-        attention = torch.where(adj > 0, e, zero_vec)
+        attention = torch.where(self.adj > 0, e, zero_vec)
         attention = F.softmax(attention, dim=1)
         attention = F.dropout(attention, self.dropout, training=self.training)
         h_prime = torch.matmul(attention, h)

@@ -96,6 +96,7 @@ if args.sparse:
                         nheads=args.nb_heads,
                         alpha=args.alpha,
                         adj_ad=adj_ad,
+                        adj=adj,
                         dataset_str=args.dataset)
 else:
     model = ADSF(nfeat=features.shape[1],
@@ -104,7 +105,11 @@ else:
                  dropout=args.dropout,
                  nheads=args.nb_heads,
                  alpha=args.alpha,
-                 adj_ad=adj_ad)
+                 adj_ad=adj_ad,
+                 adj=adj)
+print("Using {} gpu".format(torch.cuda.device_count()))
+if torch.cuda.device_count() > 1:  # 多卡
+    model = torch.nn.DataParallel(model)
 optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
 if args.cuda:
@@ -123,7 +128,7 @@ def train(epoch):
     t = time.time()
     model.train()
     optimizer.zero_grad()
-    output = model(features, adj)
+    output = model(features)
     loss_train = multi_labels_nll_loss(output[idx_train], labels[idx_train])  # softmax+nllloss
     acc_train, preds = accuracy(output[idx_train], labels[idx_train], args.cuda)
     loss_train.backward()
