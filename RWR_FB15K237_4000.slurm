@@ -3,8 +3,6 @@
 #SBATCH -J rwr_f4             # 任务名称
 #SBATCH --gres=gpu:V100:1               # 申请一张GPUV100
 #SBATCH -c 5                # 申请CPU核数
-#SBATCH -p sugon
-#SBATCH -x sugon-gpu-5,sugon-gpu-6
 time=`date +%Y%m%d-%H%M%S`
 mkdir ./RWR/${time}
 source /home/LAB/anaconda3/etc/profile.d/conda.sh
