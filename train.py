@@ -1,6 +1,5 @@
 from __future__ import division
 from __future__ import print_function
-import scipy
 import os
 import glob
 import time
@@ -8,7 +7,6 @@ import random
 import argparse
 import numpy as np
 import torch
-import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
 import scipy.sparse as sp
@@ -30,7 +28,7 @@ parser.add_argument('--dropout', type=float, default=0.6, help='Dropout rate (1 
 parser.add_argument('--alpha', type=float, default=0.2, help='Alpha for the leaky_relu.')
 parser.add_argument('--patience', type=int, default=100, help='Patience')
 parser.add_argument('--dataset', type=str, default='citeseer', help='DataSet of model')
-parser.add_argument('--no-sparse', action='store_true', default=False, help='Not use sparse matrix')  # 缺少args.no_sparse
+parser.add_argument('--no-sparse', action='store_true', default=False, help='Not use sparse matrix')
 # 实验名称，用于生成.pkl文件夹
 parser.add_argument('--experiment', type=str, default='GAT', help='Name of current experiment.')
 
@@ -47,46 +45,8 @@ torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
-
-def preprocess_features(features, dataset_str):  # 将features按行归一化，features为coo稀疏矩阵格式
-    """Row-normalize feature matrix and convert to tuple representation"""
-    rowsum = np.array(features.sum(1))  # 每行求和
-    r_inv = (1 / rowsum).flatten()  # 求倒数，展开，原代码为r_inv = np.power(rowsum, -1).flatten()，无法运行-1次方
-    r_inv[np.isinf(r_inv)] = 0.  # 处理nan
-    r_mat_inv = sp.diags(r_inv)  # 构建稀疏的对角矩阵
-    features = r_mat_inv.dot(features)
-    if dataset_str == 'citeseer':
-        features = features.todense()
-    return features# , sparse_to_tuple(features)
-
-
-def sparse_to_tuple(sparse_mx):  # 稀疏矩阵features变元组
-    """Convert sparse matrix to tuple representation."""
-    def to_tuple(mx):
-        if not sp.isspmatrix_coo(mx):
-            mx = mx.tocoo()
-        coords = np.vstack((mx.row, mx.col)).transpose()  # coords是稀疏矩阵中位置信息
-        values = mx.data
-        shape = mx.shape
-        return coords, values, shape
-
-    if isinstance(sparse_mx, list):  # 不会进来
-        for i in range(len(sparse_mx)):
-            sparse_mx[i] = to_tuple(sparse_mx[i])
-    else:
-        sparse_mx = to_tuple(sparse_mx)  # 得到(位置，值，shape)的元组
-
-    return sparse_mx
-
-
 # Load data
-adj, features, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask, labels, nclass, adj_ad = load_data(args.dataset, args.sparse)  # features为coo稀疏矩阵
-features = preprocess_features(features, args.dataset)  # 归一化，得到实矩阵features和元组spars
-features = np.array(features, dtype=np.float32)
-# features = scipy.sparse.csr_matrix(features)  # 稀疏矩阵features
-#
-# features = features.astype(np.float32)
-features = torch.FloatTensor(features)
+adj, features, idx_train, idx_val, idx_test, labels, nclass, adj_ad = load_data(args.dataset, args.sparse)  # features为coo稀疏矩阵
 
 if args.sparse:
     model = RWR_process(nfeat=features.shape[1],
@@ -108,10 +68,6 @@ else:
                  adj_ad=adj_ad,
                  adj=adj)
 
-if args.cuda:
-    print("Using {} gpu".format(torch.cuda.device_count()))
-    if torch.cuda.device_count() > 1:  # 多卡
-        model = torch.nn.DataParallel(model)
 optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
 if args.cuda:
